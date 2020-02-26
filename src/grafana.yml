@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    app: ft_services
+spec:
+  selector:
+    matchLabels:
+      app: ft_services
+      tier: grafana
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ft_services
+        tier: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+          hostPort: 3000
+          name: grafana
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ft_services
+  name: grafana
+spec:
+  ports:
+  - port: 3000
+  selector:
+    app: ft_services
+    tier: grafana
+  type: LoadBalancer

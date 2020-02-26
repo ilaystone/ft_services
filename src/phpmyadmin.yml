@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin
+  labels:
+    app: ft_services
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    name: pma
+  selector:
+    app: ft_services
+    tier: phpmyadmin
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin
+  labels:
+    app: ft_services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ft_services
+      tier: phpmyadmin
+  template:
+    metadata:
+      labels:
+        app: ft_services
+        tier: phpmyadmin
+    spec:
+      containers:
+      - name: phpmyadmin
+        image: phpmyadmin-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+          hostPort: 5000
+          name: pma
+        env:
+        - name: PMA_HOST
+          valueFrom:
+            secretKeyRef:
+              name: pma-data
+              key: host
+        - name: PMA_PORT
+          valueFrom:
+            secretKeyRef:
+              name: pma-data
+              key: port
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sql-login
+              key: password
+      restartPolicy: Always

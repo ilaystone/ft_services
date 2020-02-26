@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ftps
+  labels:
+    app: ft_services
+spec:
+  ports:
+  - port: 21
+    name: ftp
+  - port: 21001
+    name: ftps
+  selector:
+    app: ft_services
+    tier: ftps
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftps
+  labels:
+    app: ft_services
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ft_services
+      tier: ftps
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ft_services
+        tier: ftps
+    spec:
+      containers:
+      - name: ftps
+        image: ftps-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 21
+          hostPort: 21
+        - containerPort: 21001
+          hostPort: 21001
+        env:
+        - name: MINIKUBEIP
+          valueFrom:
+            secretKeyRef:
+              name: minikubeip
+              key: minikubeip
+        - name: USER
+          valueFrom:
+              secretKeyRef:
+                name: login
+                key: username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: login
+              key: password
+        volumeMounts:
+        - name: ftps-key
+          mountPath: /etc/ssl/private
+      restartPolicy: Always
+      volumes:
+      - name: ftps-key
+        secret:
+          secretName: ftps-key

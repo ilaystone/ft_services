@@ -2,6 +2,49 @@ configMapGenerator:
   - name: nginx-config
     files:
     - nginx/nginx.conf
+  - name: telegraf-config
+    files:
+    - telegraf/telegraf.conf
+  - name: ssh-config
+    files:
+    - sshd_config=nginx/sshd_config
+  - name: mysql-config
+    files:
+    - my.cnf=mysql/my.cnf
+secretGenerator:
+  - name: tls-key
+    files:
+    - tls.crt=nginx/tls.crt
+    - tls.key=nginx/tls.key
+  - name: ftps-key
+    files:
+      - pure-ftpd.pem=ftps/pure-ftpd.pem
+  - name: ssh-key
+    files:
+    - ssh_host_rsa_key=nginx/ssh_host_rsa_key
+  - name: login
+    literals:
+    - username=admin
+    - password=admin
+  - name: sql-login
+    literals:
+      - username=root
+      - password=toor
+  - name: wp-data
+    literals:
+      - host=mysql
+      - db-name=wordpress
+  - name: pma-data
+    literals:
+      - host=mysql
+      - port="3306"
 resources:
-- nginx.yml
-- ingress.yml
+# - nginx.yml
+# - ingress.yml
+# - ftps.yml
+# - mysql.yml
+# - phpmyadmin.yml
+# - wordpress.yml
+- influxdb.yml
+- telegraf.yml
+- grafana.yml

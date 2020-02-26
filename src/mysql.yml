@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+  labels:
+    app: ft_services
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 2Gi
+  accessModes:
+  - ReadWriteMany
+  hostPath:
+    path: "/mnt/data/mysql"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  labels:
+    app: ft_services
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: ft_services
+spec:
+  ports:
+  - port: 3306
+    protocol: TCP
+    name: sql
+  selector:
+    app: ft_services
+    tier: mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: ft_services
+spec:
+  selector:
+    matchLabels:
+      app: ft_services
+      tier: mysql
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ft_services
+        tier: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3306
+          hostPort: 3306
+          name: sql
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /app/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/my.cnf
+          subPath: my.cnf
+        env:
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: sql-login
+              key: username
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sql-login
+              key: password
+      restartPolicy: Always
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+      - name: mysql-config
+        configMap:
+          name: mysql-config
